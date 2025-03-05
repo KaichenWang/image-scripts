@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# Place this combine_photos.sh file in the same folder as images and run:
-# chmod +x combine_photos.sh
-# ./combine_photos.sh
-
 files=(*.jpg)
 num_files=${#files[@]}
 

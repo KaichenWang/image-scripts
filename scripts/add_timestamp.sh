@@ -1,7 +1,4 @@
 #!/bin/bash
-# Place this add_timestamp.sh file in the same folder as images and run:
-# chmod +x add_timestamp.sh
-# ./add_timestamp.sh
 
 # Valid file extensions
 image_extensions="jpg|jpeg|png|gif|bmp|tiff|webp|heic"
