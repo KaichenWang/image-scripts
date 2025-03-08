@@ -31,7 +31,7 @@ chmod +x combine_photos.sh
 ./combine_photos.sh
 ```
 
-##### Multiples images
+##### Multiple images
 
 Pass a number as argument. Example: combining 3 photos:
 ```
