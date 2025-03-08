@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Valid file extensions
-image_extensions="jpg|jpeg|png|gif|bmp|tiff|webp|heic"
+image_extensions="jpg|jpeg|png|gif|bmp|tiff|webp|heic|HEIC"
 
 # Counters
 success_count=0
