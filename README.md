@@ -12,8 +12,10 @@ Adds a timestamp of when the image was created to the bottom right corner. Appli
 #### Usage
 
 - Place this add_timestamp.sh file in the same folder as images and run:
-- chmod +x add_timestamp.sh
-- ./add_timestamp.sh
+```
+chmod +x add_timestamp.sh
+./add_timestamp.sh
+```
 
 ### combine_photos.sh
 
@@ -24,8 +26,10 @@ Combines two images into one. Applied in batch to all images in directory (every
 #### Usage
 
 - Place this combine_photos.sh file in the same folder as images and run:
-- chmod +x combine_photos.sh
-- ./combine_photos.sh
+```
+chmod +x combine_photos.sh
+./combine_photos.sh
+```
 
 ##### Multiples images
 
