@@ -1,5 +1,69 @@
 #!/bin/bash
 
+# Usage function
+usage() {
+    echo "Usage: $0 [OPTIONS]"
+    echo "Add timestamp overlay to images in the current directory"
+    echo ""
+    echo "OPTIONS:"
+    echo "  -d, --delete    Delete original files after successful timestamping"
+    echo "  -b, --before DATE  Skip images with timestamps on or after DATE (format: DD-MM-YYYY)"
+    echo "  -h, --help      Show this help message"
+    echo ""
+    echo "Examples:"
+    echo "  $0                          # Process images, keep originals"
+    echo "  $0 -d                       # Process images, delete originals after success"
+    echo "  $0 --delete                 # Same as -d"
+    echo "  $0 -b 15-06-2023            # Skip images on or after June 15, 2023"
+    echo "  $0 -d -b 01-01-2024         # Delete originals, skip images on or after Jan 1, 2024"
+}
+
+# Parse command line arguments
+DELETE_ORIGINAL=false
+BEFORE_DATE=""
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -d|--delete)
+            DELETE_ORIGINAL=true
+            shift
+            ;;
+        -b|--before)
+            if [[ -z "$2" ]]; then
+                echo "Error: -b/--before requires a date argument (DD-MM-YYYY)"
+                usage
+                exit 1
+            fi
+            BEFORE_DATE="$2"
+            shift 2
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            usage
+            exit 1
+            ;;
+    esac
+done
+
+# Validate date format if provided
+if [[ -n "$BEFORE_DATE" ]]; then
+    if [[ ! "$BEFORE_DATE" =~ ^[0-9]{2}-[0-9]{2}-[0-9]{4}$ ]]; then
+        echo "Error: Invalid date format. Expected DD-MM-YYYY, got: $BEFORE_DATE"
+        usage
+        exit 1
+    fi
+    
+    # Validate the date is actually valid
+    if ! date -jf "%d-%m-%Y" "$BEFORE_DATE" "+%d-%m-%Y" >/dev/null 2>&1; then
+        echo "Error: Invalid date: $BEFORE_DATE"
+        exit 1
+    fi
+fi
+
 # Valid file extensions
 image_extensions="jpg|jpeg|png|gif|bmp|tiff|webp|heic|HEIC"
 
@@ -22,6 +86,12 @@ base_pointsize=100
 base_offset=2
 
 echo "================ Start ================"
+if [ "$DELETE_ORIGINAL" = true ]; then
+    echo "⚠️  DELETE MODE: Original files will be deleted after successful processing"
+fi
+if [ -n "$BEFORE_DATE" ]; then
+    echo "📅  DATE FILTER: Skipping images with timestamps on or after $BEFORE_DATE"
+fi
 for pic in *.*; do
     if [[ ! "$pic" =~ .*\.(${image_extensions})$ ]]; then
         echo "⚠️[Skipped]: non-image file: $pic"
@@ -34,6 +104,23 @@ for pic in *.*; do
     year=$(date -jf "%Y-%m-%d %H:%M:%S %z" "$creation_date_raw" "+%y")
     month=$(date -jf "%Y-%m-%d %H:%M:%S %z" "$creation_date_raw" "+%m")
     day=$(date -jf "%Y-%m-%d %H:%M:%S %z" "$creation_date_raw" "+%d")
+    
+    # Check date filter if specified
+    if [ -n "$BEFORE_DATE" ]; then
+        # Convert image date to DD-MM-YYYY format for comparison
+        image_date=$(date -jf "%Y-%m-%d %H:%M:%S %z" "$creation_date_raw" "+%d-%m-%Y")
+        
+        # Convert both dates to epoch time for comparison
+        image_epoch=$(date -jf "%d-%m-%Y" "$image_date" "+%s")
+        before_epoch=$(date -jf "%d-%m-%Y" "$BEFORE_DATE" "+%s")
+        
+        # Skip if image date is on or after the before date
+        if [ "$image_epoch" -ge "$before_epoch" ]; then
+            echo "📅[Skipped]: $pic (date: $image_date, on or after $BEFORE_DATE)"
+            ((skipped_count++))
+            continue
+        fi
+    fi
     
     # Get image dimensions
     dimensions=$(identify -format "%wx%h" "$pic")
@@ -102,6 +189,15 @@ for pic in *.*; do
     if convert "$pic" "${convert_opts[@]}" "$output_file"; then
         echo "[Success]: $pic -> $output_file"
         ((success_count++))
+        
+        # Delete original file if requested
+        if [ "$DELETE_ORIGINAL" = true ]; then
+            if rm "$pic"; then
+                echo "  [Deleted]: $pic"
+            else
+                echo "  ⚠️[Warning]: Failed to delete original file: $pic"
+            fi
+        fi
     else
         echo "❌[Failed]: $pic"
         ((failed_count++))
